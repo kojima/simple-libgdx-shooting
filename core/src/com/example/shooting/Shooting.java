@@ -2,6 +2,7 @@ package com.example.shooting;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,11 +19,16 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.removeActor;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
+// ゲームアセット
+// [Space ship] http://opengameart.org/content/space-shooter-art
+// [Beam sound] http://www.freesound.org/people/MusicLegends/sounds/344310/
+//[BGM] http://www.freesound.org/people/orangefreesounds/sounds/326479/
 public class Shooting extends ApplicationAdapter {
 	private Stage stage;
 	private Image spaceship;
-	private Sound beamSound;
-	private Integer beamCount = 0;
+    private Sound beamSound;
+    private Music bgm;
+    private Integer beamCount = 0;
 
 	@Override
 	public void create () {
@@ -80,7 +86,10 @@ public class Shooting extends ApplicationAdapter {
 		stage.addActor(spaceship);
 
 		beamSound = Gdx.audio.newSound(Gdx.files.internal("beam.wav"));
-	}
+        bgm = Gdx.audio.newMusic(Gdx.files.internal("bgm.mp3"));
+        bgm.setLooping(true);
+        bgm.play();
+    }
 
 	@Override
 	public void render () {
