@@ -6,10 +6,12 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
 // アクター(actor)のアクション(action)を簡単に記述するためのstatic import
@@ -23,8 +25,10 @@ public class Shooting extends ApplicationAdapter {
 	private Stage stage;            // ゲームステージ
 	private Image spaceship;        // スペースシップ (プレイヤー)
     private Sound beamSound;        // ビーム音
+    private Sound enemySpawn;       // 敵発生音
     private Music bgm;              // BGM
     private Integer beamCount = 0;  // ビーム発射数 (発射数制限を設けるため)
+    private long lastEnemySpawnedTime;
 
 	@Override
 	public void create () {
@@ -99,11 +103,26 @@ public class Shooting extends ApplicationAdapter {
 		stage.addActor(spaceship);  // スペースシップをステージに追加する
 
 		beamSound = Gdx.audio.newSound(Gdx.files.internal("beam.wav"));     // ビーム発射音用サウンドを読み込む
+        enemySpawn = Gdx.audio.newSound(Gdx.files.internal("enemy_spawn.wav"));
         bgm = Gdx.audio.newMusic(Gdx.files.internal("bgm.mp3"));            // BGM用音楽を読み込む
         bgm.setLooping(true);   // BGM再生をループ設定にする
         bgm.play();             // BGMを再生する
+
+        lastEnemySpawnedTime = TimeUtils.nanoTime();
     }
 
+    private void spawnEnemy() {
+        Image enemyShip = new Image(new Texture(Gdx.files.internal("enemy_ship.png")));
+        enemyShip.setX(MathUtils.random(0, stage.getWidth() - enemyShip.getWidth()));
+        enemyShip.setY(stage.getHeight());
+        enemyShip.addAction(sequence(
+                moveBy(0, -(stage.getHeight() + enemyShip.getHeight()), 3),
+                removeActor()
+        ));
+        enemySpawn.play();
+        stage.addActor(enemyShip);
+        lastEnemySpawnedTime = TimeUtils.nanoTime();
+    }
 	@Override
 	public void render () {
         // 画面をミッドナイトブルー(red = 44, green = 62, blue = 80)に設定する
@@ -132,6 +151,9 @@ public class Shooting extends ApplicationAdapter {
 		} else if (spaceship.getY() > stage.getHeight() - spaceship.getHeight()) {  // スペースシップが画面上端よりも上に移動してしまったら、画面上端に戻す
 			spaceship.setY(stage.getHeight() - spaceship.getHeight());
 		}
+
+        // check if we need to create a new raindrop
+        if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(2, 5))) spawnEnemy();
 	}
 
 	@Override
