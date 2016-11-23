@@ -4,3 +4,4 @@
 
 ## サウンド
 * <a href="http://www.freesound.org/people/MusicLegends/sounds/344310/">ビーム音</a>
+* <a href="http://www.freesound.org/people/orangefreesounds/sounds/326479/">BGM</a>
