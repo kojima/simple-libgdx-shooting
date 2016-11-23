@@ -1,3 +1,12 @@
+# シューティングゲーム
+LibGDXを使って、簡単なシューティングゲームを作成します。<br/>
+<img alt="ゲーム画面" src="https://github.com/kojima/simple-libgdx-shooting/tree/master/screenshots/sh01.png"/><br/>
+画面をタップすると、スペースシップ(プレイヤー)からビームが発射されます。<br/>
+スペースシップは、端末を傾けて操作します。<br/>
+一度に発射できるビームを3発に制限します。<br/>
+ビーム発射の際に、発射音が鳴るようにします。<br/>
+BGMもループ再生します。<br/>
+LibGDXのActorやAction等、基本的な要素を使用して実現しています<br/>
 # AndroidManifest
 `android:screenOrientation`を`portrait`に設定する
 ``` xml
