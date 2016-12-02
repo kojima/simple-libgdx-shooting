@@ -8,6 +8,10 @@ LibGDXを使って、簡単なシューティングゲームを作成します�
 * <a href="http://www.freesound.org/people/orangefreesounds/sounds/326479/">BGM</a>もループ再生します。
 * LibGDXのActorやAction等、基本的な要素を使用して実現しています。
 
+++++++++++++++++++++++++++++++
+最初は、<a href="https://github.com/kojima/simple-libgdx-shooting/tree/step01">"Step 1"</a>から作り始めます
+++++++++++++++++++++++++++++++
+
 # AndroidManifest
 `android:screenOrientation`を`portrait`に設定する
 ``` xml
