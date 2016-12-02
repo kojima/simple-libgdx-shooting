@@ -60,17 +60,17 @@ public class Shooting extends ApplicationAdapter {
     }
 
     private Stage stage;                // ゲームステージ
-    private GameSprite spaceship;        // スペースシップ (プレイヤー)
+    private GameSprite spaceship;       // スペースシップ (プレイヤー)
     private Sound beamSound;            // ビーム音
     private Sound explosionSound;       // 爆発音
     private Sound enemySpawnSound;      // 敵発生音
     private Sound enemyBeamSound;       // 敵ビーム音
     private Sound enemyExplosionSound;  // 敵爆発音
     private Sound gameLoseSound;        // ゲームオーバー音
-    private Music bgm;                    // BGM
+    private Music bgm;                  // BGM
     private Integer beamCount = 0;      // ビーム発射数 (発射数制限を設けるため)
-    private long lastEnemySpawnedTime;
-    private boolean gameOver = false;
+    private long lastEnemySpawnedTime;  // 最後に敵を発生させた時間
+    private boolean gameOver = false;   // ゲームオーバーしているかどうか (trueの場合ゲームオーバー)
 
     @Override
     public void create () {
@@ -148,13 +148,13 @@ public class Shooting extends ApplicationAdapter {
         spaceship.setZIndex(10);    // スペースシップが最前面に配置されるようにする
         stage.addActor(spaceship);  // スペースシップをステージに追加する
 
-        beamSound = Gdx.audio.newSound(Gdx.files.internal("beam.wav"));     // ビーム発射音用サウンドを読み込む
-        explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));    // 爆発用サウンドを読み込む
-        enemySpawnSound = Gdx.audio.newSound(Gdx.files.internal("enemy_spawn.wav")); // 敵発生音用サウンドを読み込む
-        enemyBeamSound = Gdx.audio.newSound(Gdx.files.internal("enemy_beam.wav"));   // 敵ビーム用サウンドを読み込む
-        enemyExplosionSound = Gdx.audio.newSound(Gdx.files.internal("enemy_explosion.wav"));   // 敵爆発用サウンドを読み込む
-        gameLoseSound = Gdx.audio.newSound(Gdx.files.internal("lose.wav"));
-        bgm = Gdx.audio.newMusic(Gdx.files.internal("bgm.mp3"));            // BGM用音楽を読み込む
+        beamSound = Gdx.audio.newSound(Gdx.files.internal("beam.wav"));                         // ビーム発射音用サウンドを読み込む
+        explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));               // 爆発用サウンドを読み込む
+        enemySpawnSound = Gdx.audio.newSound(Gdx.files.internal("enemy_spawn.wav"));            // 敵発生音用サウンドを読み込む
+        enemyBeamSound = Gdx.audio.newSound(Gdx.files.internal("enemy_beam.wav"));              // 敵ビーム用サウンドを読み込む
+        enemyExplosionSound = Gdx.audio.newSound(Gdx.files.internal("enemy_explosion.wav"));    // 敵爆発用サウンドを読み込む
+        gameLoseSound = Gdx.audio.newSound(Gdx.files.internal("lose.wav"));                     // ゲームオーバー用サウンドを読み込む
+        bgm = Gdx.audio.newMusic(Gdx.files.internal("bgm.mp3"));                                // BGM用音楽を読み込む
         bgm.setLooping(true);   // BGM再生をループ設定にする
         bgm.play();             // BGMを再生する
 
@@ -252,6 +252,7 @@ public class Shooting extends ApplicationAdapter {
         // ランダムな間隔(3秒〜6秒)で敵を発生させる
         if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(3, 6))) spawnEnemy();
 
+        // ゲームキャラクター同士に衝突がないかチェックする
         checkCollisions();
     }
 
@@ -260,24 +261,28 @@ public class Shooting extends ApplicationAdapter {
         Array<Actor> actors = stage.getActors();
         for (int i = 0; i < actors.size; i++) {
             Actor actorA = actors.get(i);
-            for (int j = 0; j < actors.size; j++) {
+            for (int j = i + 1; j < actors.size; j++) {
                 Actor actorB = actors.get(j);
-                if (!actorA.equals(actorB) && actorA instanceof GameSprite && actorB instanceof GameSprite) {
+                // actorAもactorBもどちらもゲームキャラクター(GameSprite)の場合
+                if (actorA instanceof GameSprite && actorB instanceof GameSprite) {
                     GameSprite spriteA = (GameSprite)actorA;
                     GameSprite spriteB = (GameSprite)actorB;
                     List<String> names = Arrays.asList(spriteA.name, spriteB.name);
                     if (spriteA.overlaps(spriteB)) {
-                        if (names.contains("beam") && names.contains("enemy")) {
-                            if (spriteA.name.equals("enemy")) {
-                                explodeEnemy(spriteA);
-                            } else {
-                                explodeEnemy(spriteB);
-                            }
-                        } else if (names.contains("spaceship") && (names.contains("enemy") || names.contains("enemy_beam"))) {
+                        // プレイヤーが敵または敵のビームに触れた場合
+                        if (names.contains("spaceship") && (names.contains("enemy") || names.contains("enemy_beam"))) {
+                            // spriteAとspriteBのどちらがプレイヤーか調べる
                             if (spriteA.name.equals("spaceship")) {
                                 explodePlayer(spriteA);
                             } else {
                                 explodePlayer(spriteB);
+                            }
+                        } else if (names.contains("enemy") && names.contains("beam")) { // 敵がビームに触れた場合
+                            // spriteAとspriteBのどちらが敵か調べる
+                            if (spriteA.name.equals("enemy")) {
+                                explodeEnemy(spriteA);
+                            } else {
+                                explodeEnemy(spriteB);
                             }
                         }
                     }
@@ -286,6 +291,7 @@ public class Shooting extends ApplicationAdapter {
         }
     }
 
+    // プレイヤーを爆破させる
     private void explodePlayer(GameSprite player) {
         Image explosion = new Image(new Texture(Gdx.files.internal("explosion.png")));
         explosion.setPosition(player.getX(), player.getY());
@@ -314,6 +320,7 @@ public class Shooting extends ApplicationAdapter {
         explosionSound.play();
     }
 
+    // 敵を爆破させる
     private void explodeEnemy(GameSprite enemy) {
         Image explosion = new Image(new Texture(Gdx.files.internal("enemy_explosion.png")));
         explosion.setPosition(enemy.getX(), enemy.getY());
@@ -335,20 +342,20 @@ public class Shooting extends ApplicationAdapter {
         enemyExplosionSound.play();
     }
 
+    // ゲームオーバーの演出を行う
     private void gameOver() {
         bgm.stop();
         gameLoseSound.play();
-
     }
 
     @Override
     public void dispose () {
-        stage.dispose();            // ステージを破棄する
-        beamSound.dispose();        // ビーム発射音を破棄する
-        enemySpawnSound.dispose();  // 敵発生音を破棄する
-        enemyBeamSound.dispose();   // 敵ビーム音を破棄する
+        stage.dispose();                // ステージを破棄する
+        beamSound.dispose();            // ビーム発射音を破棄する
+        enemySpawnSound.dispose();      // 敵発生音を破棄する
+        enemyBeamSound.dispose();       // 敵ビーム音を破棄する
         enemyExplosionSound.dispose();  // 敵爆発音を破棄する
         gameLoseSound.dispose();        // ゲームオーバー音を破棄する
-        bgm.dispose();              // BGMを破棄する
+        bgm.dispose();                  // BGMを破棄する
     }
 }
