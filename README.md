@@ -192,8 +192,10 @@ public class Shooting extends ApplicationAdapter {
 
 # 使用ゲームアセット
 ## 画像
-* <a href="http://opengameart.org/content/space-shooter-art">スペースシップ</a>
+* <a href="http://opengameart.org/content/space-shooter-art">スペースシップ/敵/ビーム</a>
 
 ## サウンド
 * <a href="http://www.freesound.org/people/MusicLegends/sounds/344310/">ビーム音</a>
+* <a href="http://www.freesound.org/people/alpharo/sounds/186696/">敵発生音</a>
+* <a href="http://www.freesound.org/people/Heshl/sounds/269170/">敵ビーム音</a>
 * <a href="http://www.freesound.org/people/orangefreesounds/sounds/326479/">BGM</a>
