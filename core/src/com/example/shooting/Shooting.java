@@ -20,7 +20,8 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 // ゲームアセット
 // [Space ship] http://opengameart.org/content/space-shooter-art
 // [Beam sound] http://www.freesound.org/people/MusicLegends/sounds/344310/
-//[BGM] http://www.freesound.org/people/orangefreesounds/sounds/326479/
+// [Enemy spawn sound] http://www.freesound.org/people/alpharo/sounds/186696/
+// [BGM] http://www.freesound.org/people/orangefreesounds/sounds/326479/
 public class Shooting extends ApplicationAdapter {
 	private Stage stage;            // ゲームステージ
 	private Image spaceship;        // スペースシップ (プレイヤー)
@@ -115,8 +116,9 @@ public class Shooting extends ApplicationAdapter {
         Image enemyShip = new Image(new Texture(Gdx.files.internal("enemy_ship.png")));
         enemyShip.setX(MathUtils.random(0, stage.getWidth() - enemyShip.getWidth()));
         enemyShip.setY(stage.getHeight());
+		// 画面を1秒〜3秒の時間で縦に移動するようにアクションを設定する
         enemyShip.addAction(sequence(
-                moveBy(0, -(stage.getHeight() + enemyShip.getHeight()), 3),
+                moveBy(0, -(stage.getHeight() + enemyShip.getHeight()), MathUtils.random(1, 3)),
                 removeActor()
         ));
         enemySpawn.play();
