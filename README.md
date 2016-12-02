@@ -30,7 +30,7 @@ LibGDXを使って、簡単なシューティングゲームを作成します�
         android:theme="@style/GdxTheme" >
         <activity
             android:name="com.example.shooting.AndroidLauncher"
-            android:label="@string/app_name" 
+            android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize">
             <intent-filter>
@@ -53,10 +53,13 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
 // アクター(actor)のアクション(action)を簡単に記述するためのstatic import
@@ -65,19 +68,24 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 // ゲームアセット
 // [Space ship] http://opengameart.org/content/space-shooter-art
 // [Beam sound] http://www.freesound.org/people/MusicLegends/sounds/344310/
-//[BGM] http://www.freesound.org/people/orangefreesounds/sounds/326479/
+// [Enemy spawn sound] http://www.freesound.org/people/alpharo/sounds/186696/
+// [Enemy beam sound] http://www.freesound.org/people/Heshl/sounds/269170/
+// [BGM] http://www.freesound.org/people/orangefreesounds/sounds/326479/
 public class Shooting extends ApplicationAdapter {
 	private Stage stage;            // ゲームステージ
 	private Image spaceship;        // スペースシップ (プレイヤー)
-    private Sound beamSound;        // ビーム音
-    private Music bgm;              // BGM
-    private Integer beamCount = 0;  // ビーム発射数 (発射数制限を設けるため)
+  private Sound beamSound;        // ビーム音
+  private Sound enemySpawnSound;  // 敵発生音
+  private Sound enemyBeamSound;   // 敵ビーム音
+  private Music bgm;              // BGM
+  private Integer beamCount = 0;  // ビーム発射数 (発射数制限を設けるため)
+  private long lastEnemySpawnedTime;
 
 	@Override
 	public void create () {
 		stage = new Stage(new FitViewport(1080, 1776));     // ゲーム用のステージを1080x1776のサイズで作成
 		Gdx.input.setInputProcessor(stage);                 // ステージでインプット(タッチ入力など)を処理する
-        // ステージでタッチ入力を処理するためのリスナー(listener)を追加する
+    // ステージでタッチ入力を処理するためのリスナー(listener)を追加する
 		stage.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
 				return true;
@@ -127,10 +135,10 @@ public class Shooting extends ApplicationAdapter {
 
 		Image starFront = new Image(new Texture(Gdx.files.internal("star_front.png")));   // 宇宙の星(前背景)用アクター(actor)を用意する
 		starFront.setZIndex(3);          // 宇宙の星(前背景)がスペースシップやビームより下に配置されるようにする (宇宙の星(後背景)よりは前に配置されるようにする)
-        // 宇宙の星(前背景)に以下のアクションを追加する:
-        // 1. ステージの高さの分だけ5秒で後に進む
-        // 2. 元の位置(x = 0, y = 0)に戻る
-        // ※ 1 → 2をずっと繰り返す
+    // 宇宙の星(前背景)に以下のアクションを追加する:
+    // 1. ステージの高さの分だけ5秒で後に進む
+    // 2. 元の位置(x = 0, y = 0)に戻る
+    // ※ 1 → 2をずっと繰り返す
 		starFront.addAction(forever(
 				sequence(
 						moveTo(0, -stage.getHeight(), 5),
@@ -140,15 +148,74 @@ public class Shooting extends ApplicationAdapter {
 		stage.addActor(starFront);   // 宇宙の星(前背景)をステージに追加する
 
 		spaceship = new Image(new Texture(Gdx.files.internal("spaceship01.png")));   // スペースシップ(プレイヤー)用アクター(actor)を用意する
-        // スペースシップを画面下端中央に配置する
-        spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
+    // スペースシップを画面下端中央に配置する
+    spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
 		spaceship.setZIndex(10);    // スペースシップが最前面に配置されるようにする
 		stage.addActor(spaceship);  // スペースシップをステージに追加する
 
 		beamSound = Gdx.audio.newSound(Gdx.files.internal("beam.wav"));     // ビーム発射音用サウンドを読み込む
+        enemySpawnSound = Gdx.audio.newSound(Gdx.files.internal("enemy_spawn.wav")); // 敵発生音用サウンドを読み込む
+        enemyBeamSound = Gdx.audio.newSound(Gdx.files.internal("enemy_beam.wav"));   // 敵ビーム用サウンドを読み込む
         bgm = Gdx.audio.newMusic(Gdx.files.internal("bgm.mp3"));            // BGM用音楽を読み込む
         bgm.setLooping(true);   // BGM再生をループ設定にする
         bgm.play();             // BGMを再生する
+
+        lastEnemySpawnedTime = TimeUtils.nanoTime();
+    }
+
+    private void spawnEnemy() {
+        final Image enemyShip = new Image(new Texture(Gdx.files.internal("enemy_ship.png")));
+        enemyShip.setX(MathUtils.random(0, stage.getWidth() - enemyShip.getWidth()));
+        enemyShip.setY(stage.getHeight());
+		// 画面を3秒〜6秒の時間で縦に移動するようにアクションを設定する
+        // それと同時に、横方向に不規則に動くようにもアクションを設定する
+        enemyShip.addAction(parallel(
+                // 縦に移動するためのアクション
+                sequence(
+                        moveBy(0, -(stage.getHeight() + enemyShip.getHeight()), MathUtils.random(3, 6)),
+                        removeActor()
+                ),
+                // 横方向に不規則に動くためのアクション
+                forever(
+                        sequence(
+                                delay(MathUtils.random(50, 100) / 100.f),
+                                // 毎回違う量だけ横に動かすためには、runアクション内でmoveByアクションを設定する必要がある
+                                run(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        enemyShip.addAction(moveBy(MathUtils.random(-200, 200), 0, .5f));
+                                    }
+                                })
+                        )
+
+                )
+        ));
+        // 不規則な間隔(0.5秒〜3秒)でビームを撃ち続ける
+        enemyShip.addAction(forever(
+                sequence(
+                        delay(MathUtils.random(50, 300) / 100.f),
+                        run(new Runnable() {
+                            @Override
+                            public void run() {
+                                spawnEnemyBeam(enemyShip);
+                            }
+                        })
+                )
+        ));
+        enemySpawnSound.play();
+        stage.addActor(enemyShip);
+        lastEnemySpawnedTime = TimeUtils.nanoTime();
+    }
+
+    private void spawnEnemyBeam(Actor enemy) {
+        Image beam = new Image(new Texture(Gdx.files.internal("enemy_beam.png")));
+        beam.setPosition(enemy.getX() + enemy.getWidth() * .5f - beam.getWidth() * 0.5f, enemy.getY());
+        beam.addAction(sequence(
+                moveBy(0, -stage.getHeight(), 1.f),
+                removeActor()
+        ));
+        stage.addActor(beam);
+        enemyBeamSound.play();
     }
 
 	@Override
@@ -179,13 +246,16 @@ public class Shooting extends ApplicationAdapter {
 		} else if (spaceship.getY() > stage.getHeight() - spaceship.getHeight()) {  // スペースシップが画面上端よりも上に移動してしまったら、画面上端に戻す
 			spaceship.setY(stage.getHeight() - spaceship.getHeight());
 		}
+
+    // ランダムな間隔(3秒〜6秒)で敵を発生させる
+    if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(3, 6))) spawnEnemy();
 	}
 
 	@Override
 	public void dispose () {
 		stage.dispose();        // ステージを破棄する
-        bgm.dispose();          // ビーム発射音を破棄する
-        beamSound.dispose();    // BGMを破棄する
+    bgm.dispose();          // ビーム発射音を破棄する
+    beamSound.dispose();    // BGMを破棄する
 	}
 }
 ```
