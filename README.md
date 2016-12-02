@@ -465,4 +465,4 @@ public class Shooting extends ApplicationAdapter {
 * <a href="http://www.freesound.org/people/orangefreesounds/sounds/326479/">BGM</a>
 
 ## フォント
-* <a href="http://akashicdesign.net/">Zen 88</a>(※ 現在は公開されていないようです)
+* <a href="http://akashicdesign.net/">88 Zen</a>(※ 現在は公開されていないようです)
