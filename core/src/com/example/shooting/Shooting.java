@@ -206,8 +206,10 @@ public class Shooting extends ApplicationAdapter {
 
 	@Override
 	public void dispose () {
-		stage.dispose();        // ステージを破棄する
-        bgm.dispose();          // ビーム発射音を破棄する
-        beamSound.dispose();    // BGMを破棄する
+		stage.dispose();            // ステージを破棄する
+        beamSound.dispose();        // ビーム発射音を破棄する
+        enemySpawnSound.dispose();  // 敵発生音を破棄する
+        enemyBeamSound.dispose();   // 敵ビーム音を破棄する
+        bgm.dispose();              // BGMを破棄する
 	}
 }
