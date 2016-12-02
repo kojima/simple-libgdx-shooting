@@ -74,18 +74,18 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 public class Shooting extends ApplicationAdapter {
 	private Stage stage;            // ゲームステージ
 	private Image spaceship;        // スペースシップ (プレイヤー)
-  private Sound beamSound;        // ビーム音
-  private Sound enemySpawnSound;  // 敵発生音
-  private Sound enemyBeamSound;   // 敵ビーム音
-  private Music bgm;              // BGM
-  private Integer beamCount = 0;  // ビーム発射数 (発射数制限を設けるため)
-  private long lastEnemySpawnedTime;
+    private Sound beamSound;        // ビーム音
+    private Sound enemySpawnSound;  // 敵発生音
+    private Sound enemyBeamSound;   // 敵ビーム音
+    private Music bgm;              // BGM
+    private Integer beamCount = 0;  // ビーム発射数 (発射数制限を設けるため)
+    private long lastEnemySpawnedTime;
 
 	@Override
 	public void create () {
 		stage = new Stage(new FitViewport(1080, 1776));     // ゲーム用のステージを1080x1776のサイズで作成
 		Gdx.input.setInputProcessor(stage);                 // ステージでインプット(タッチ入力など)を処理する
-    // ステージでタッチ入力を処理するためのリスナー(listener)を追加する
+        // ステージでタッチ入力を処理するためのリスナー(listener)を追加する
 		stage.addListener(new InputListener() {
 			public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
 				return true;
@@ -135,10 +135,10 @@ public class Shooting extends ApplicationAdapter {
 
 		Image starFront = new Image(new Texture(Gdx.files.internal("star_front.png")));   // 宇宙の星(前背景)用アクター(actor)を用意する
 		starFront.setZIndex(3);          // 宇宙の星(前背景)がスペースシップやビームより下に配置されるようにする (宇宙の星(後背景)よりは前に配置されるようにする)
-    // 宇宙の星(前背景)に以下のアクションを追加する:
-    // 1. ステージの高さの分だけ5秒で後に進む
-    // 2. 元の位置(x = 0, y = 0)に戻る
-    // ※ 1 → 2をずっと繰り返す
+        // 宇宙の星(前背景)に以下のアクションを追加する:
+        // 1. ステージの高さの分だけ5秒で後に進む
+        // 2. 元の位置(x = 0, y = 0)に戻る
+        // ※ 1 → 2をずっと繰り返す
 		starFront.addAction(forever(
 				sequence(
 						moveTo(0, -stage.getHeight(), 5),
@@ -148,8 +148,8 @@ public class Shooting extends ApplicationAdapter {
 		stage.addActor(starFront);   // 宇宙の星(前背景)をステージに追加する
 
 		spaceship = new Image(new Texture(Gdx.files.internal("spaceship01.png")));   // スペースシップ(プレイヤー)用アクター(actor)を用意する
-    // スペースシップを画面下端中央に配置する
-    spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
+        // スペースシップを画面下端中央に配置する
+        spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
 		spaceship.setZIndex(10);    // スペースシップが最前面に配置されるようにする
 		stage.addActor(spaceship);  // スペースシップをステージに追加する
 
@@ -247,15 +247,15 @@ public class Shooting extends ApplicationAdapter {
 			spaceship.setY(stage.getHeight() - spaceship.getHeight());
 		}
 
-    // ランダムな間隔(3秒〜6秒)で敵を発生させる
-    if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(3, 6))) spawnEnemy();
+        // ランダムな間隔(3秒〜6秒)で敵を発生させる
+        if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(3, 6))) spawnEnemy();
 	}
 
 	@Override
 	public void dispose () {
 		stage.dispose();        // ステージを破棄する
-    bgm.dispose();          // ビーム発射音を破棄する
-    beamSound.dispose();    // BGMを破棄する
+        bgm.dispose();          // ビーム発射音を破棄する
+        beamSound.dispose();    // BGMを破棄する
 	}
 }
 ```
