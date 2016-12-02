@@ -106,8 +106,16 @@ public class Shooting extends ApplicationAdapter {
         }
     }
 
+    // ゲームの状態を管理するための列挙型を定義する
+    private enum GameStatus {
+        PLAYING,
+        GAME_OVER,
+        WAIT_TO_RESTART,
+    }
+
     private Stage stage;                // ゲームステージ
     private GameSprite spaceship;       // スペースシップ (プレイヤー)
+    private Image gameOver;             // ゲームオーバー
     private Sound beamSound;            // ビーム音
     private Sound explosionSound;       // 爆発音
     private Sound enemySpawnSound;      // 敵発生音
@@ -117,21 +125,22 @@ public class Shooting extends ApplicationAdapter {
     private Music bgm;                  // BGM
     private Integer beamCount = 0;      // ビーム発射数 (発射数制限を設けるため)
     private long lastEnemySpawnedTime;  // 最後に敵を発生させた時間
-    private boolean gameOver = false;   // ゲームオーバーしているかどうか (trueの場合ゲームオーバー)
+    private GameStatus status = GameStatus.PLAYING; // ゲームステータス
+    private InputListener inputListener;            // ステージ用イベントリスナ
 
     @Override
     public void create () {
         stage = new Stage(new FitViewport(1080, 1776));     // ゲーム用のステージを1080x1776のサイズで作成
         Gdx.input.setInputProcessor(stage);                 // ステージでインプット(タッチ入力など)を処理する
-        // ステージでタッチ入力を処理するためのリスナー(listener)を追加する
-        stage.addListener(new InputListener() {
+        // ステージ用のイベントリスナを定義する
+        inputListener = new InputListener() {
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
                 return true;
             }
 
             // タッチアップ(タッチして指を離したタイミング)でビームを発射する
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
-                if (gameOver) return;
+                if (status != GameStatus.PLAYING) return;
 
                 if (beamCount < 3) {    // ビーム発射数が3発以下なら新たにビームを発射する
                     beamCount++;        // ビーム発射数を1つ増やす
@@ -147,18 +156,20 @@ public class Shooting extends ApplicationAdapter {
                     // 2. ビーム発射数を1つ減らす
                     // 3. ビーム用アクターをステージから削除する
                     beam.addAction(sequence(
-                        moveTo(beam.getX(), beam.getY() + stage.getHeight(), .5f),
-                        run(new Runnable() {
-                            @Override
-                            public void run() {
-                                beamCount--;
-                            }
-                        }),
-                        removeActor()
+                            moveTo(beam.getX(), beam.getY() + stage.getHeight(), .5f),
+                            run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    beamCount--;
+                                }
+                            }),
+                            removeActor()
                     ));
                 }
             }
-        });
+        };
+        // ステージでタッチ入力を処理するためのリスナー(listener)を追加する
+        stage.addListener(inputListener);
 
         Image starBack = new Image(new Texture(Gdx.files.internal("star_back.png")));   // 宇宙の星(後背景)用アクター(actor)を用意する
         starBack.setZIndex(1);          // 宇宙の星(後背景)がスペースシップやビームより下に配置されるようにする
@@ -194,6 +205,9 @@ public class Shooting extends ApplicationAdapter {
         spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
         spaceship.setZIndex(10);    // スペースシップが最前面に配置されるようにする
         stage.addActor(spaceship);  // スペースシップをステージに追加する
+
+        gameOver = new GameSprite(new Texture(Gdx.files.internal("game_over.png")));
+        gameOver.setPosition(0, stage.getHeight() * .5f - gameOver.getHeight() * .5f);
 
         beamSound = Gdx.audio.newSound(Gdx.files.internal("beam.wav"));                         // ビーム発射音用サウンドを読み込む
         explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));               // 爆発用サウンドを読み込む
@@ -274,7 +288,12 @@ public class Shooting extends ApplicationAdapter {
         stage.act(Gdx.graphics.getDeltaTime());     // ステージの状態を前回render呼び出しからの経過時間(delta time)分だけ更新する
         stage.draw();                               // ステージを最新の状態に描画する
 
-        if (gameOver) return;
+        if (status == GameStatus.GAME_OVER) {
+            return;
+        } else if (status == GameStatus.WAIT_TO_RESTART) {
+            if (Gdx.input.isTouched()) restart();
+            return;
+        }
 
         // 端末が横方向に傾いたら、傾き量に応じてスペースシップを横方向に移動させる
         if (Math.abs(Gdx.input.getAccelerometerX()) > 0.2) {
@@ -355,7 +374,8 @@ public class Shooting extends ApplicationAdapter {
                 ),
                 scaleTo(2.f, 2.f, .2f)
         ));
-        gameOver = true;
+        status = GameStatus.GAME_OVER;  // ステータスをゲームオーバーにする
+        // 爆発が終わった後(2秒後)にゲームオーバーの演出をする
         Timer.schedule(new Timer.Task() {
             @Override
             public void run() {
@@ -391,8 +411,32 @@ public class Shooting extends ApplicationAdapter {
 
     // ゲームオーバーの演出を行う
     private void gameOver() {
-        bgm.stop();
-        gameLoseSound.play();
+        bgm.stop(); // BGMを停止する
+        stage.removeListener(inputListener);    // ステージから一旦イベントリスナを削除する
+        gameLoseSound.play();   // ゲームオーバー音を鳴らす
+        // ゲームオーバー音がなり終わった後にゲームオーバー画面を表示する
+        Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                stage.addActor(gameOver);
+                status = GameStatus.WAIT_TO_RESTART;    // ステータスをリスタート待ち(wait to restart)にする
+            }
+        }, 4.5f);
+    }
+
+    // ゲームリスタート時のセットアップを行う
+    private void restart() {
+        // スペースシップを配置し直し、ステージに再度追加する
+        spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
+        stage.addActor(spaceship);
+        // ステージにイベントリスナを再度追加する
+        stage.addListener(inputListener);
+        // ゲームオーバー画像を削除する
+        gameOver.remove();
+        // BGMを最初から再生する
+        bgm.setPosition(0);
+        bgm.play();
+        status = GameStatus.PLAYING;
     }
 
     @Override
