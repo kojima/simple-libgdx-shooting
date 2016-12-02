@@ -463,3 +463,6 @@ public class Shooting extends ApplicationAdapter {
 * <a href="http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270310/">敵爆発音</a>
 * <a href="http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270329/">ゲームオーバー音</a>
 * <a href="http://www.freesound.org/people/orangefreesounds/sounds/326479/">BGM</a>
+
+## フォント
+* <a href="http://akashicdesign.net/">Zen 88</a>(※ 現在は公開されていないようです)
