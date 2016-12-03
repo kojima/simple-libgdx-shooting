@@ -466,3 +466,4 @@ public class Shooting extends ApplicationAdapter {
 
 ## フォント
 * <a href="http://akashicdesign.net/">88 Zen</a>(※ 現在は公開されていないようです)
+* <a href="https://github.com/libgdx/libgdx/wiki/Hiero">Hiero</a>(ビットマップ作成ツール)
