@@ -55,6 +55,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -88,6 +89,7 @@ public class Shooting extends ApplicationAdapter {
 
         String name = "";
         Rectangle bounds = new Rectangle();
+        BitmapFont font;
 
         private GameSprite(Texture texture) {
             super(texture);
@@ -106,6 +108,19 @@ public class Shooting extends ApplicationAdapter {
         }
     }
 
+    // ゲーム中に表示するテキスト用のクラスを定義する
+    private static final class GameText extends Actor {
+
+        String text = "";
+        BitmapFont font = new BitmapFont(Gdx.files.internal("88zen.fnt"));
+
+        @Override
+        public void draw (Batch batch, float parentAlpha) {
+            super.draw(batch, parentAlpha);
+            font.draw(batch, text, getX(), getY());
+        }
+    }
+
     // ゲームの状態を管理するための列挙型を定義する
     private enum GameStatus {
         PLAYING,
@@ -115,6 +130,7 @@ public class Shooting extends ApplicationAdapter {
 
     private Stage stage;                // ゲームステージ
     private GameSprite spaceship;       // スペースシップ (プレイヤー)
+    private GameText scoreText;         // ゲームスコア表示
     private Image gameOver;             // ゲームオーバー
     private Sound beamSound;            // ビーム音
     private Sound explosionSound;       // 爆発音
@@ -125,6 +141,7 @@ public class Shooting extends ApplicationAdapter {
     private Music bgm;                  // BGM
     private Integer beamCount = 0;      // ビーム発射数 (発射数制限を設けるため)
     private long lastEnemySpawnedTime;  // 最後に敵を発生させた時間
+    private int score = 0;              // 現在のゲームスコア
     private GameStatus status = GameStatus.PLAYING; // ゲームステータス
     private InputListener inputListener;            // ステージ用イベントリスナ
 
@@ -199,11 +216,18 @@ public class Shooting extends ApplicationAdapter {
         ));
         stage.addActor(starFront);   // 宇宙の星(前背景)をステージに追加する
 
+        // ゲームスコアを画面左上に表示する
+        scoreText = new GameText();
+        scoreText.text = "スコア: " + score;
+        scoreText.setPosition(32, stage.getHeight() - 40);
+        scoreText.setZIndex(100);   // ゲームスコアが最前面に配置されるようにする
+        stage.addActor(scoreText);
+
         spaceship = new GameSprite(new Texture(Gdx.files.internal("spaceship01.png")));   // スペースシップ(プレイヤー)用アクター(actor)を用意する
         spaceship.name = "spaceship";
         // スペースシップを画面下端中央に配置する
         spaceship.setPosition(stage.getWidth() * 0.5f - spaceship.getWidth() * 0.5f, 0);
-        spaceship.setZIndex(10);    // スペースシップが最前面に配置されるようにする
+        spaceship.setZIndex(10);    // スペースシップが前面に配置されるようにする
         stage.addActor(spaceship);  // スペースシップをステージに追加する
 
         gameOver = new GameSprite(new Texture(Gdx.files.internal("game_over.png")));
@@ -404,6 +428,8 @@ public class Shooting extends ApplicationAdapter {
                 ),
                 scaleTo(2.f, 2.f, .2f)
         ));
+        score += 10;    // スコアを10点加算する
+        scoreText.text = "スコア: " + score;
         stage.addActor(explosion);
         enemy.remove();
         enemyExplosionSound.play();
@@ -437,6 +463,9 @@ public class Shooting extends ApplicationAdapter {
         bgm.setPosition(0);
         bgm.play();
         status = GameStatus.PLAYING;
+        // スコアを0にリセットする
+        score = 0;
+        scoreText.text = "スコア: " + score;
     }
 
     @Override
@@ -467,4 +496,4 @@ public class Shooting extends ApplicationAdapter {
 ## フォント
 * <a href="http://akashicdesign.net/">88 Zen</a>(※ 現在は公開されていないようです)
 * <a href="https://github.com/libgdx/libgdx/wiki/Hiero">Hiero</a>(ビットマップフォント作成ツール)
-** ビットマップフォント作成の際の参考サイト: <a href="http://doc.tir.ne.jp/devel/clan/libgdx#bitmapfont">libgdxメモ BitmapFont</a>
+ * ビットマップフォント作成の際の参考サイト: <a href="http://doc.tir.ne.jp/devel/clan/libgdx#bitmapfont">libgdxメモ BitmapFont</a>
