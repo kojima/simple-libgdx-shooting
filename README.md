@@ -452,6 +452,9 @@ public class Shooting extends ApplicationAdapter {
 }
 ```
 
+# 次のステップ
+<a href="https://github.com/kojima/simple-libgdx-shooting/tree/step05">Step 5</a>に進んでください
+
 # 使用ゲームアセット
 ## 画像
 * <a href="http://opengameart.org/content/space-shooter-art">スペースシップ/敵/ビーム</a>
