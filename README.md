@@ -620,6 +620,8 @@ public class Shooting extends ApplicationAdapter {
 * <a href="http://www.freesound.org/people/Heshl/sounds/269170/">敵ビーム音</a>
 * <a href="http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270310/">敵爆発音</a>
 * <a href="http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270329/">ゲームオーバー音</a>
+* <a href="http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270333/">ゲームクリア音</a>
+* <a href="http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270324/">ボタンタップ音</a>
 * <a href="http://www.freesound.org/people/orangefreesounds/sounds/326479/">BGM</a>
 
 ## フォント
