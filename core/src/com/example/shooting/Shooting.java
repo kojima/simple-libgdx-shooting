@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -36,6 +37,7 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 // [Enemy explosion sound] http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270310/
 // [Game lose sound] http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270329/
 // [Game win sound] http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270333/
+// [Button tap sound] http://www.freesound.org/people/LittleRobotSoundFactory/sounds/270324/
 // [BGM] http://www.freesound.org/people/orangefreesounds/sounds/326479/
 public class Shooting extends ApplicationAdapter {
 
@@ -44,7 +46,6 @@ public class Shooting extends ApplicationAdapter {
 
         String name = "";
         Rectangle bounds = new Rectangle();
-        BitmapFont font;
 
         private GameSprite(Texture texture) {
             super(texture);
@@ -67,7 +68,7 @@ public class Shooting extends ApplicationAdapter {
     private static final class GameText extends Actor {
 
         String text = "";
-        private BitmapFont font = new BitmapFont(Gdx.files.internal("88zen.fnt"));
+        BitmapFont font = new BitmapFont(Gdx.files.internal("88zen.fnt"));
 
         @Override
         public void draw(Batch batch, float parentAlpha) {
@@ -128,6 +129,7 @@ public class Shooting extends ApplicationAdapter {
     private Sound enemyExplosionSound;  // 敵爆発音
     private Sound gameLoseSound;        // ゲームオーバー音
     private Sound gameWinSound;         // ゲームウィン音
+    private Sound tapSound;             // タップ音
     private Music bgm;                  // BGM
     private Integer beamCount = 0;      // ビーム発射数 (発射数制限を設けるため)
     private long lastEnemySpawnedTime;  // 最後に敵を発生させた時間
@@ -209,6 +211,7 @@ public class Shooting extends ApplicationAdapter {
         ));
         stage.addActor(starFront);   // 宇宙の星(前背景)をステージに追加する
 
+        // 残り距離を画面右端に表示する
         meter = new DistanceMeter(stage.getWidth() - 20, 0, 20, stage.getHeight());
         meter.currentDistance = 0;
         stage.addActor(meter);
@@ -241,13 +244,14 @@ public class Shooting extends ApplicationAdapter {
         enemyBeamSound = Gdx.audio.newSound(Gdx.files.internal("enemy_beam.wav"));              // 敵ビーム用サウンドを読み込む
         enemyExplosionSound = Gdx.audio.newSound(Gdx.files.internal("enemy_explosion.wav"));    // 敵爆発用サウンドを読み込む
         gameLoseSound = Gdx.audio.newSound(Gdx.files.internal("lose.wav"));                     // ゲームオーバー用サウンドを読み込む
-        gameWinSound = Gdx.audio.newSound(Gdx.files.internal("win.wav"));
+        gameWinSound = Gdx.audio.newSound(Gdx.files.internal("win.wav"));                       // ゲームウィン用サウンドを読み込む
+        tapSound = Gdx.audio.newSound(Gdx.files.internal("tap.wav"));                           // ボタンタップ用サウンドを読み込む
         bgm = Gdx.audio.newMusic(Gdx.files.internal("bgm.mp3"));                                // BGM用音楽を読み込む
         bgm.setLooping(true);   // BGM再生をループ設定にする
         bgm.play();             // BGMを再生する
 
-        lastEnemySpawnedTime = TimeUtils.nanoTime();
-        gameStartTime = TimeUtils.nanoTime();
+        lastEnemySpawnedTime = TimeUtils.nanoTime();    // 最終敵生成時刻を初期化する
+        gameStartTime = TimeUtils.nanoTime();           // ゲーム開始時刻を初期化する
     }
 
     private void spawnEnemy() {
@@ -320,25 +324,21 @@ public class Shooting extends ApplicationAdapter {
             return;
         } else if (status == GameStatus.GAME_WIN) {
             controlPlayer();
-            return;
-        } else if (status == GameStatus.WAIT_TO_RESTART_FROM_WIN || status == GameStatus.WAIT_TO_RESTART_FROM_LOSE) {
-            if (status == GameStatus.WAIT_TO_RESTART_FROM_WIN) controlPlayer();
+        } else if (status == GameStatus.WAIT_TO_RESTART_FROM_WIN) {
+            controlPlayer();
+        } else if (status == GameStatus.WAIT_TO_RESTART_FROM_LOSE) {
             if (Gdx.input.isTouched()) restart();
-            return;
+        } else if (status == GameStatus.PLAYING) {
+            controlPlayer();
+            // ランダムな間隔(3秒〜6秒)で敵を発生させる
+            if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(3, 6))) spawnEnemy();
+            // ゲーム開始時刻からの経過時間から、進行距離を計算する
+            meter.currentDistance = (int)((TimeUtils.nanoTime() - gameStartTime) / 1000000000.f);
+            // 進行距離が100を超えたらゲームクリア
+            if (meter.currentDistance > 100) gameWin();
+            // ゲームキャラクター同士に衝突がないかチェックする
+            checkCollisions();
         }
-
-        controlPlayer();
-
-        // ランダムな間隔(3秒〜6秒)で敵を発生させる
-        if (TimeUtils.nanoTime() - lastEnemySpawnedTime > (1000000000 * (long)MathUtils.random(3, 6))) spawnEnemy();
-
-        // ゲーム開始時刻からの経過時間から、進行距離を計算する
-        meter.currentDistance = (int)((TimeUtils.nanoTime() - gameStartTime) / 1000000000.f);
-        // 進行距離が100を超えたらゲームクリア
-        if (meter.currentDistance > 100) gameWin();
-
-        // ゲームキャラクター同士に衝突がないかチェックする
-        checkCollisions();
     }
 
     // プレイヤーを操縦する
@@ -469,6 +469,7 @@ public class Shooting extends ApplicationAdapter {
                 }
             }
         }
+        // ゲームウィン表示を点滅させる
         youWin.addAction(
             repeat(3, sequence(fadeOut(.2f), fadeIn(.2f), delay(.2f)))
         );
@@ -476,6 +477,26 @@ public class Shooting extends ApplicationAdapter {
         Timer.schedule(new Timer.Task() {
             @Override
             public void run() {
+                // ゲームスコア表示を画面中央に移動させる
+                GlyphLayout layout = new GlyphLayout();
+                layout.setText(scoreText.font, scoreText.text);
+                scoreText.setPosition(stage.getWidth() * .5f - layout.width * .5f, stage.getHeight() * .5f - 128.f);
+                // リスタートボタンをセットアップする
+                final Image restartButton = new Image(new Texture(Gdx.files.internal("restart_button.png")));
+                restartButton.addListener(new InputListener() {
+                    public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
+                        event.stop();
+                        return true;
+                    }
+
+                    public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
+                        tapSound.play();
+                        restartButton.remove();
+                        restart();
+                    }
+                });
+                restartButton.setPosition(stage.getWidth() * .5f - restartButton.getWidth() * .5f, stage.getHeight() * .5f - 400.f);
+                stage.addActor(restartButton);
                 status = GameStatus.WAIT_TO_RESTART_FROM_WIN;    // ステータスをリスタート待ち(wait to restart)にする
             }
         }, 2.5f);
@@ -490,6 +511,8 @@ public class Shooting extends ApplicationAdapter {
         Timer.schedule(new Timer.Task() {
             @Override
             public void run() {
+                // スコアを非表示にする
+                scoreText.remove();
                 stage.addActor(gameOver);
                 status = GameStatus.WAIT_TO_RESTART_FROM_LOSE;    // ステータスをリスタート待ち(wait to restart)にする
             }
@@ -506,9 +529,13 @@ public class Shooting extends ApplicationAdapter {
             stage.addListener(inputListener);
             // ゲームオーバー画像を削除する
             gameOver.remove();
+            // スコアを再度表示する
+            stage.addActor(scoreText);
         } else if (status == GameStatus.WAIT_TO_RESTART_FROM_WIN) {
             // ゲームクリア画像を削除する
             youWin.remove();
+            // スコア表示を画面左上に戻す
+            scoreText.setPosition(32, stage.getHeight() - 40);
         }
         // BGMを最初から再生する
         bgm.setPosition(0);
@@ -529,6 +556,8 @@ public class Shooting extends ApplicationAdapter {
         enemyBeamSound.dispose();       // 敵ビーム音を破棄する
         enemyExplosionSound.dispose();  // 敵爆発音を破棄する
         gameLoseSound.dispose();        // ゲームオーバー音を破棄する
+        gameWinSound.dispose();         // ゲームウィン音を破棄する
+        tapSound.dispose();             // タップ音を破棄する
         bgm.dispose();                  // BGMを破棄する
     }
 }
