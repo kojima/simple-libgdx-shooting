@@ -1,4 +1,4 @@
-package com.example.shooting;
+package com.hide.shooting;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
