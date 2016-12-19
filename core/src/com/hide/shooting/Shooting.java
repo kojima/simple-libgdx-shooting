@@ -381,8 +381,12 @@ public class Shooting extends ApplicationAdapter {
                         if (names.contains("spaceship") && (names.contains("enemy") || names.contains("enemy_beam"))) {
                             // spriteAとspriteBのどちらがプレイヤーか調べる
                             if (spriteA.name.equals("spaceship")) {
+                                // 敵機が一時的に画面左下に見えない状態で表示されることがあるので、
+                                // 敵機が正常に表示されている状態で衝突した場合にのみ爆破させる
                                 if (spriteB.getImageWidth() > 0) explodePlayer(spriteA);
                             } else {
+                                // 敵機が一時的に画面左下に見えない状態で表示されることがあるので、
+                                // 敵機が正常に表示されている状態で衝突した場合にのみ爆破させる
                                 if (spriteA.getImageWidth() > 0) explodePlayer(spriteB);
                             }
                         } else if (names.contains("enemy") && names.contains("beam")) { // 敵がビームに触れた場合
