@@ -381,9 +381,9 @@ public class Shooting extends ApplicationAdapter {
                         if (names.contains("spaceship") && (names.contains("enemy") || names.contains("enemy_beam"))) {
                             // spriteAとspriteBのどちらがプレイヤーか調べる
                             if (spriteA.name.equals("spaceship")) {
-                                explodePlayer(spriteA);
+                                if (spriteB.getImageWidth() > 0) explodePlayer(spriteA);
                             } else {
-                                explodePlayer(spriteB);
+                                if (spriteA.getImageWidth() > 0) explodePlayer(spriteB);
                             }
                         } else if (names.contains("enemy") && names.contains("beam")) { // 敵がビームに触れた場合
                             // spriteAとspriteBのどちらが敵か調べる
